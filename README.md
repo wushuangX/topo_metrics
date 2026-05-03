@@ -17,10 +17,9 @@
 
 ### TOPO F1 — Topological F1 Score
 
-基于局部子图采样的拓扑 F1 分数。在图中随机放置种子点，以种子为中心提取子图，对子图中的边均匀采样点，然后通过空间距离阈值进行点匹配，计算精确率与召回率的调和平均值。TOPO F1 侧重于衡量**局部几何与拓扑重叠度**。
+TOPO 指标由 Biagioni & Eriksson (2012) 提出，用于评估道路网络的拓扑质量。将预测路网和真实路网转成图后，通过可达性/局部子图比对得到拓扑意义上的 TP/FP/FN，进而计算拓扑 Precision、Recall 和 F1。其中的 F1 即 TOPO F1（也写作 TOPO(F1) 或 TOPO-F1），侧重于衡量预测路网的**几何连通性与结构完整性**。
 
-- **原始论文**: He, S. et al. "RoadRunner: Improving the Precision of Road Network Inference from GPS Trajectories", ACM SIGSPATIAL 2018
-- **推广实现**: He, S. et al. "Sat2Graph: Road Graph Extraction through Graph-Tensor Encoding", ECCV 2020
+- **原始论文**: Biagioni, J. & Eriksson, J. "Map Inference in the Face of Noise and Disparity", ACM SIGSPATIAL GIS 2012
 - **适用场景**: 道路网络提取、地图推断
 
 > **APLS 与 TOPO F1 的关系**：APLS 评估全局路径连通性（长距离路由质量），TOPO F1 评估局部几何与拓扑重叠度（细粒度结构保真度）。两者互补，通常一起报告。
@@ -77,13 +76,11 @@ uv run pytest
   year={2018}
 }
 
-@inproceedings{he2018roadrunner,
-  title={RoadRunner: Improving the Precision of Road Network Inference from GPS Trajectories},
-  author={He, Songtao and Bastani, Favyen and Abbar, Sofiane and Alizadeh, Mohammad and Balakrishnan, Hari and Chawla, Sanjay and Madden, Sam},
-  booktitle={Proceedings of the 26th ACM SIGSPATIAL International Conference on Advances in Geographic Information Systems},
-  pages={3--12},
-  year={2018},
-  doi={10.1145/3274895.3274974}
+@inproceedings{biagioni2012map,
+  title={Map Inference in the Face of Noise and Disparity},
+  author={Biagioni, James and Eriksson, J{\'a}nos},
+  booktitle={Proceedings of the 20th ACM SIGSPATIAL International Conference on Advances in Geographic Information Systems},
+  year={2012}
 }
 ```
 
