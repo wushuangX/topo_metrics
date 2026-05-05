@@ -1,0 +1,3 @@
+[submodule "external/Sat2Graph"]
+	path = external/Sat2Graph
+	url = git@github.com:songtaohe/Sat2Graph.git
