@@ -124,6 +124,22 @@ score = apls(pred, gt)
 print(f"APLS: {score:.4f}")  # 预期输出接近 1.0
 ```
 
+## 从分割掩码直接计算
+
+当输入为二值分割图而非图结构时，可使用 `apls_from_mask` 一步完成：
+
+```python
+import numpy as np
+from topo_metrics import apls_from_mask
+
+# prediction 和 ground_truth 均为 (H, W) 二值数组
+score = apls_from_mask(prediction, ground_truth)
+print(f"APLS: {score:.4f}")
+```
+
+该函数内部依次调用 `mask_to_graph` 将掩码转为 `TopoGraph`，再调用 `apls` 计算。
+所有 `apls` 和 `mask_to_graph` 的参数均可通过关键字参数传递。
+
 ## 参考文献
 
 Van Etten, A., Lindenbaum, D., & Bacastow, T.M. "SpaceNet: A Remote Sensing Dataset and Challenge Series." *arXiv preprint arXiv:1807.01232*, 2018.
