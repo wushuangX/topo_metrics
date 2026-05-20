@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Sphinx build output
+docs/sphinx/_build/
+
+# OS files
+.DS_Store
