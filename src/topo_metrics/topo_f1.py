@@ -19,10 +19,29 @@ from topo_metrics._graph import TopoGraph
 
 
 def _physical_coords(nodes: np.ndarray, spacing: tuple[float, float]) -> np.ndarray:
+    """Convert node coordinates from pixel units to physical units.
+
+    Args:
+        nodes: (N, 2) array of node coordinates in pixel units.
+        spacing: Physical size per pixel as (sx, sy).
+
+    Returns:
+        (N, 2) array of node coordinates in physical units.
+    """
     return nodes * np.array(spacing)
 
 
 def _edge_direction(graph: TopoGraph, n1: int, n2: int) -> np.ndarray:
+    """Compute unit direction vector of an edge in physical coordinates.
+
+    Args:
+        graph: TopoGraph containing the edge.
+        n1: Source node index.
+        n2: Target node index.
+
+    Returns:
+        (2,) unit vector from n1 to n2 in physical coordinates.
+    """
     diff = (graph.nodes[n2] - graph.nodes[n1]) * np.array(graph.spacing)
     length = np.linalg.norm(diff)
     if length < 1e-12:
@@ -38,8 +57,16 @@ def _generate_seeds(
 ) -> list[tuple[np.ndarray, int, int, float, float]]:
     """Sample seed points along GT chains.
 
-    Returns list of (position_physical, edge_node1, edge_node2,
-    dist_from_n1, dist_from_n2) for each seed.
+    Args:
+        gt: Ground truth graph.
+        density: Physical distance between seed points.
+        margin: Margin around region to exclude seeds. Defaults to 0.0.
+        region: Bounding box (xmin, ymin, xmax, ymax) for seed region.
+            Defaults to None.
+
+    Returns:
+        List of tuples (position_physical, edge_node1, edge_node2,
+        dist_from_n1, dist_from_n2) for each seed.
     """
     spacing_arr = np.array(gt.spacing)
     chains = gt.get_chains()
@@ -101,7 +128,21 @@ def _match_seed_to_pred(
 ) -> tuple[int, int, float, float] | None:
     """Find the nearest predicted edge for a GT seed point.
 
-    Returns (pred_n1, pred_n2, dist_from_n1, dist_from_n2) or None.
+    Args:
+        seed_pos: (2,) array of seed position in physical coordinates.
+        pred: Predicted graph.
+        threshold: Maximum distance for matching in physical units.
+        cos_angle_threshold: Cosine of maximum angular difference for
+            matching.
+        gt_n1: Source node index of the GT edge.
+        gt_n2: Target node index of the GT edge.
+        gt: Ground truth graph.
+        used_pred_edges: Set of already-matched predicted edge keys
+            (node_a, node_b) to exclude.
+
+    Returns:
+        Tuple of (pred_n1, pred_n2, dist_from_n1, dist_from_n2) if a
+        matching predicted edge is found, otherwise None.
     """
     if pred.num_nodes == 0 or pred.num_edges == 0:
         return None
@@ -167,7 +208,17 @@ def _topo_walk(
 ) -> list[tuple[np.ndarray, np.ndarray]]:
     """BFS walk from seed edge, sampling points every *step* physical units.
 
-    Returns list of (position_physical, direction_unit_vector).
+    Args:
+        graph: Graph to walk.
+        seed_n1: Source node of the seed edge.
+        seed_n2: Target node of the seed edge.
+        seed_dist1: Distance along the edge from n1 to the seed point.
+        seed_dist2: Distance along the edge from n2 to the seed point.
+        step: Sampling interval in physical units.
+        radius: Maximum walk radius in physical units.
+
+    Returns:
+        List of (position_physical, direction_unit_vector) tuples.
     """
     spacing_arr = np.array(graph.spacing)
     adj = graph._build_adjacency()
@@ -266,6 +317,18 @@ def _bipartite_match(
     """Compute precision and recall via bipartite matching.
 
     Uses scipy.optimize.linear_sum_assignment with a cost matrix.
+
+    Args:
+        marbles: List of (position, direction) tuples from the predicted
+            graph (precision side).
+        holes: List of (position, direction) tuples from the ground truth
+            graph (recall side).
+        dist_threshold: Maximum distance for matching in physical units.
+        cos_angle_threshold: Cosine of maximum angular difference for
+            matching.
+
+    Returns:
+        Tuple of (precision, recall). Both in [0, 1].
     """
     n_m = len(marbles)
     n_h = len(holes)
@@ -318,7 +381,18 @@ def _graph_distance_between_seeds(
     s2: tuple[int, int, float, float],
     max_dist: float,
 ) -> float:
-    """Estimate graph distance between two seed locations."""
+    """Estimate graph distance between two seed locations.
+
+    Args:
+        graph: Graph containing the seeds.
+        s1: First seed as (n1, n2, dist_from_n1, dist_from_n2).
+        s2: Second seed as (n1, n2, dist_from_n1, dist_from_n2).
+        max_dist: Maximum distance to consider; short-circuits if direct
+            distance is below this value.
+
+    Returns:
+        Estimated graph distance between the two seed locations.
+    """
     n1_a, n2_a, d1_a, d2_a = s1
     n1_b, n2_b, d1_b, d2_b = s2
 
@@ -357,6 +431,17 @@ def _deduplicate_seeds(
     """Remove TOPO results where seeds are too close (graph-distance based).
 
     Keeps the higher-F1 seed when two seeds are within dedup_dist.
+
+    Args:
+        gt: Ground truth graph.
+        results: List of (precision, recall) tuples.
+        seed_data: List of (n1, n2, dist_from_n1, dist_from_n2) tuples
+            corresponding to each result.
+        dedup_dist: Minimum allowed graph distance between seeds; closer
+            seeds are considered duplicates.
+
+    Returns:
+        Filtered list of (precision, recall) with duplicate seeds removed.
     """
     if not results:
         return results
