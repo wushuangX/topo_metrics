@@ -1,3 +1,9 @@
 [submodule "external/Sat2Graph"]
 	path = external/Sat2Graph
 	url = git@github.com:songtaohe/Sat2Graph.git
+[submodule "external/DeepRoadExtraction"]
+	path = external/DeepRoadExtraction
+	url = git@github.com:wushuangX/DeepRoadExtraction.git
+[submodule "external/cresi"]
+	path = external/cresi
+	url = git@github.com:avanetten/cresi.git
