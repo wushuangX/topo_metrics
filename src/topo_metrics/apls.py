@@ -216,14 +216,17 @@ def _compute_apls_one_way(
 
             num_pairs += 1
 
+            # (a) Unmatched control point → full penalty
             if cp1_tgt < 0 or cp2_tgt < 0:
                 sum_penalty += 1.0
                 continue
+            # (b) Unreachable path → skip (don't penalize)
 
             d_src = sp_source[cp1_src].get(cp2_src, -1.0)
             if d_src < 0:
                 num_pairs -= 1
                 continue
+            # (c) Short path → skip (below min_path_length threshold)
 
             if d_src <= min_path_length:
                 num_pairs -= 1
@@ -284,3 +287,67 @@ def apls(
     )
 
     return (score_gt_to_pred + score_pred_to_gt) / 2.0
+
+def apls_from_mask(
+    prediction: np.ndarray,
+    ground_truth: np.ndarray,
+    *,
+    spacing: tuple[float, float] = (1.0, 1.0),
+    snapping_tol: float = 10.0,
+    min_path_length: float = 100.0,
+    sample_interval: float = 50.0,
+    densify_interval: float = 2.0,
+    min_distance: int = 8,
+    drop_border_corners: int = 5,
+    border_natural_margin: int = 2,
+) -> float:
+    """Compute APLS directly from binary segmentation masks.
+
+    Pixel-to-graph convenience wrapper that converts both masks to
+    TopoGraph structures via ``mask_to_graph`` and then runs ``apls``.
+
+    Args:
+        prediction: Predicted binary mask, shape (H, W). Non-zero values
+            are treated as foreground.
+        ground_truth: Ground-truth binary mask, shape (H, W).
+        spacing: Physical size per pixel as (sx, sy). Passed to
+            ``mask_to_graph`` and used throughout the APLS computation.
+        snapping_tol: Maximum physical distance for node matching.
+        min_path_length: Ignore path pairs shorter than this.
+        sample_interval: Physical distance between control points.
+        densify_interval: Physical distance for edge densification.
+        min_distance: Minimum distance between distance-transform peaks
+            during graph node extraction.
+        drop_border_corners: Drop Harris corners within this many pixels
+            of the image border.
+        border_natural_margin: Remove natural skeleton endpoints within
+            this many pixels of the image border.
+
+    Returns:
+        APLS score in [0, 1]. 1 means perfect topology match.
+    """
+    from topo_metrics._graph import mask_to_graph as _mask_to_graph
+
+    pred_tg = _mask_to_graph(
+        prediction,
+        min_distance=min_distance,
+        drop_border_corners=drop_border_corners,
+        border_natural_margin=border_natural_margin,
+        spacing=spacing,
+    )
+    gt_tg = _mask_to_graph(
+        ground_truth,
+        min_distance=min_distance,
+        drop_border_corners=drop_border_corners,
+        border_natural_margin=border_natural_margin,
+        spacing=spacing,
+    )
+
+    return apls(
+        pred_tg,
+        gt_tg,
+        snapping_tol=snapping_tol,
+        min_path_length=min_path_length,
+        sample_interval=sample_interval,
+        densify_interval=densify_interval,
+    )
