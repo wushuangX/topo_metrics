@@ -14,3 +14,12 @@ docs/sphinx/_build/
 
 # OS files
 .DS_Store
+
+# Test artifacts (data, reports, visualizations)
+tests/*.txt
+tests/test_data_100/
+tests/test_data_edited/
+tests/test_data_vis/
+tests/test_data_vis_dre/
+tests/vis_apls_outliers/
+tests/vis_apls_test/
